@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="80" fill="#0f172a"/>
+  <text x="256" y="120" font-family="Arial,sans-serif" font-size="38" font-weight="bold" fill="#3b82f6" text-anchor="middle">AERO</text>
+  <text x="256" y="168" font-family="Arial,sans-serif" font-size="38" font-weight="bold" fill="#f8fafc" text-anchor="middle">TRACK</text>
+  <!-- Avión -->
+  <g transform="translate(256,290) rotate(-45)" fill="#3b82f6">
+    <ellipse cx="0" cy="0" rx="16" ry="58"/>
+    <ellipse cx="0" cy="-12" rx="70" ry="14"/>
+    <ellipse cx="0" cy="36" rx="36" ry="9"/>
+  </g>
+  <!-- EDR dot line -->
+  <circle cx="100" cy="420" r="10" fill="#1e3a8a"/>
+  <circle cx="155" cy="398" r="10" fill="#1e3a8a"/>
+  <circle cx="210" cy="387" r="10" fill="#1e3a8a"/>
+  <circle cx="256" cy="380" r="10" fill="#1e3a8a"/>
+  <circle cx="310" cy="393" r="10" fill="#fbbf24"/>
+  <circle cx="365" cy="362" r="10" fill="#ef4444"/>
+  <circle cx="412" cy="345" r="10" fill="#ef4444"/>
+  <polyline points="100,420 155,398 210,387 256,380 310,393 365,362 412,345" fill="none" stroke="#3b82f6" stroke-width="6"/>
+  <text x="256" y="488" font-family="Arial,sans-serif" font-size="28" fill="#64748b" text-anchor="middle">PRO</text>
+</svg>
