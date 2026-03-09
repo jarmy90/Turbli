@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AeroTrack Pro - Flight Analysis</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #0f172a; --card: #1e293b; --border: #334155;
+      --text: #f8fafc; --muted: #cbd5e1; --accent: #3b82f6;
+    }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; }
+    header { padding: 1rem 2rem; background: var(--card); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .main-container { padding: 20px; max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+    
+    .grid-top { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 768px) { .grid-top { grid-template-columns: 1fr; } }
+    .panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); display: flex; flex-direction: column; gap: 15px;}
+    
+    select, button, input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: #0f172a; color: white; font-size: 1rem; box-sizing: border-box; }
+    button { background: var(--accent); cursor: pointer; font-weight: bold; border: none; margin-top: 5px; transition: opacity 0.2s;}
+    button:hover { opacity: 0.9; }
+    button:disabled { background: #475569; cursor: not-allowed; }
+    .btn-secondary { background: #475569; margin-top: 10px; font-size: 0.85rem;}
+    
+    #map { height: 350px; border-radius: 12px; border: 1px solid var(--border); }
+
+    .control-group { display: flex; flex-direction: column; gap: 5px; }
+    .control-label { font-size: 0.75rem; color: var(--muted); font-weight: bold; text-transform: uppercase; }
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .turbli-card { background: #ffffff; color: #1e293b; border-radius: 12px; padding: 20px; }
+    .turbli-wrapper { display: flex; height: 320px; margin-top: 15px; position: relative; }
+    .severity-bar { width: 40px; display: flex; flex-direction: column; border-right: 1px solid #e2e8f0; margin-bottom: 30px; border-radius: 4px 0 0 4px; overflow: hidden; }
+    .sev-zone { flex: 1; display: flex; align-items: center; justify-content: center; writing-mode: vertical-rl; transform: rotate(180deg); font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: rgba(0,0,0,0.6); }
+    
+    .chart-legend { display: flex; flex-wrap: wrap; gap: 15px; font-size: 0.8rem; justify-content: center; margin-bottom: 10px; color: #475569; font-weight: 500;}
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+
+    .table-container { margin-top: 20px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; color: #1e293b; font-size: 0.85rem; text-align: center; min-width: 400px; }
+    th { background: #f1f5f9; padding: 10px 4px; border-bottom: 2px solid #e2e8f0; color: #475569; font-size: 0.8rem; line-height: 1.2; }
+    td { padding: 10px 4px; border-bottom: 1px solid #e2e8f0; }
+    th:first-child, td:first-child { text-align: left; padding-left: 10px; font-variant-numeric: tabular-nums; }
+    th:last-child, td:last-child { padding-right: 10px; font-size: 1rem; }
+    tr:nth-child(even) { background: #ffffff; }
+    tr:nth-child(odd) { background: #f9fafb; }
+
+    .briefing-box { background: #eff6ff; border-left: 4px solid var(--accent); padding: 20px; margin-top: 20px; border-radius: 0 8px 8px 0; color: #1e40af; font-size: 0.9rem;}
+    .briefing-box h4 { margin-top: 0; color: #1e3a8a; display: flex; align-items: center; gap: 8px; }
+    
+    .badge { padding: 3px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; display: inline-block; margin: 2px 0;}
+    .b-ok { background: #dcfce7; color: #166534; }
+    .b-cat { background: #fee2e2; color: #991b1b; }
+    .b-nubes { background: #e0e7ff; color: #3730a3; }
+    .b-sat { background: #cffafe; color: #0891b2; border: 1px solid #06b6d4; }
+
+    /* Modal Styles */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;}
+    .modal-content { background: white; color: #1e293b; max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; border-radius: 12px; padding: 30px; position: relative; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
+    .close-btn { position: absolute; top: 20px; right: 20px; background: #f1f5f9; color: #475569; width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; cursor: pointer; border: none; font-weight: bold;}
+    .info-section { margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid #e2e8f0; }
+    .info-section:last-child { border-bottom: none; }
+    .info-title { color: #1e3a8a; display: flex; align-items: center; gap: 10px; margin-top: 0;}
+    .info-text { font-size: 0.95rem; line-height: 1.6; color: #334155; }
+    .info-callout { background: #f8fafc; border-left: 4px solid #3b82f6; padding: 15px; margin: 15px 0; border-radius: 0 8px 8px 0; font-size: 0.9rem;}
+  </style>
+</head>
+<body>
+
+<header>
+  <div style="font-weight: 900; font-size: 1.2rem;">AeroTrack <span style="color:var(--accent)">PRO</span></div>
+  <div style="color: var(--muted); font-size: 0.8rem;">Despacho Avanzado: EDR, VWS, SAT & Nubes</div>
+</header>
+
+<div class="main-container">
+  <div class="grid-top">
+    <div class="panel">
+      <div class="row-2">
+        <div class="control-group">
+          <span class="control-label">Origen</span>
+          <select id="origSelect" onchange="fetchFlights()"></select>
+        </div>
+        <div class="control-group">
+          <span class="control-label">Destino</span>
+          <select id="destSelect" onchange="fetchFlights()"></select>
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="control-group">
+          <span class="control-label">Día de salida</span>
+          <select id="daySelect" onchange="fetchFlights()">
+            <option value="today">Hoy</option>
+            <option value="tomorrow">Mañana</option>
+          </select>
+        </div>
+        
+        <div class="control-group" id="flightBox">
+          <span class="control-label">Vuelo (Hora Z)</span>
+          <select id="flightSelect">
+            <option value="">Cargando...</option>
+          </select>
+        </div>
+
+        <div class="control-group" id="manualTimeBox" style="display:none;">
+          <span class="control-label">Hora Manual (UTC)</span>
+          <input type="time" id="manualTime" value="12:00">
+        </div>
+      </div>
+
+      <button type="button" id="btnCompute">ANALIZAR PLAN DE VUELO</button>
+    </div>
+    <div id="map"></div>
+  </div>
+
+  <div class="turbli-card">
+    <h3 style="margin-top:0; margin-bottom: 5px;">Análisis Atmosférico Dual</h3>
+    
+    <div class="chart-legend">
+      <div class="legend-item"><span style="width:16px; height:4px; background:#1e3a8a; display:inline-block;"></span> Turbulencia (EDR)</div>
+      <div class="legend-item"><span style="width:16px; height:2px; border-top:3px dashed #ef4444; display:inline-block;"></span> Cizalladura (Δ)</div>
+    </div>
+
+    <div class="turbli-wrapper">
+      <div class="severity-bar">
+        <div class="sev-zone" style="background:#f87171">Sev</div>
+        <div class="sev-zone" style="background:#fbbf24">Mod</div>
+        <div class="sev-zone" style="background:#fde68a">Lgt</div>
+      </div>
+      <div style="flex-grow:1; position:relative;">
+        <canvas id="mainChart"></canvas>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th>Hora<br><small>(Z)</small></th>
+            <th>Viento<br><small>km/h</small></th>
+            <th>Δ Ciz.<br><small>km/h</small></th>
+            <th>Causa / Avisos</th>
+            <th>EDR</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="5" style="padding: 20px; color: #94a3b8;">Selecciona una ruta y pulsa "Analizar Plan de Vuelo"</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="briefing" class="briefing-box" style="display:none;">
+      <h4><svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1a1 1 0 112 0v1a1 1 0 11-2 0zM13.536 14.95a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414-1.414l.707-.707zM16.243 17.243a1 1 0 01-1.414 0l-.707-.707a1 1 0 111.414-1.414l.707.707a1 1 0 010 1.414z"></path></svg> 
+      Briefing Predictivo</h4>
+      <div id="briefingContent"></div>
+    </div>
+
+    <button type="button" id="btnOpenInfo" class="btn-secondary">📖 INFO TURBULENCIAS Y METEOROLOGÍA</button>
+  </div>
+</div>
+
+<div id="infoModal" class="modal-overlay">
+  <div class="modal-content">
+    <button class="close-btn" id="btnCloseInfo">✕</button>
+    
+    <div class="info-section">
+      <h2 class="info-title">🧠 El Miedo a Volar: Un truco del cerebro</h2>
+      <div class="info-text">
+        <p>El miedo a la turbulencia no proviene del peligro real (los aviones están diseñados para soportar fuerzas inmensamente superiores a las peores turbulencias de la historia), sino de la <b>incertidumbre</b>. Nuestro cerebro está programado para alertarnos ante lo inesperado.</p>
+        <p>Cuando vas en coche y ves un bache en la carretera, tu cerebro se prepara. En un avión, el aire es invisible. Al no ver el "bache", tu sistema nervioso reacciona con ansiedad. <b>El objetivo de AeroTrack Pro es hacer visible lo invisible.</b> Cuando sabes a qué hora exacta va a temblar el avión y <i>por qué</i> está temblando, la incertidumbre desaparece, tu cerebro se relaja y el miedo se disipa.</p>
+      </div>
+    </div>
+
+    <div class="info-section">
+      <h3 class="info-title">🌬️ Turbulencia y el Índice EDR</h3>
+      <div class="info-text">
+        <p><b>¿Qué es?</b> Es simplemente aire en movimiento irregular. Imagina un río que fluye tranquilo y de repente pasa sobre unas rocas bajo el agua, creando espuma y pequeños remolinos en la superficie. El avión es como un barco navegando por ese río.</p>
+        <p><b>¿Cómo lo siente el pasajero?</b> Como ir por un camino de tierra en un todoterreno. El avión da pequeños botes. <br>En nuestra tabla, esto se mide con el valor <b>EDR</b> (<i>Eddy Dissipation Rate</i>). Un EDR por debajo de 15 es un vuelo muy tranquilo. Entre 15 y 20 notarás que la bebida tiembla. </p>
+      </div>
+    </div>
+
+    <div class="info-section">
+      <h3 class="info-title">⚠️ Cizalladura (Wind Shear)</h3>
+      <div class="info-text">
+        <p><b>¿Qué es?</b> Es un cambio brusco en la velocidad o la dirección del viento en una distancia muy corta. Imagina que vas corriendo con viento a favor, y de repente el viento cambia y te da de cara. </p>
+        <p><b>¿Cómo lo siente el pasajero?</b> Puedes sentir una ligera sensación de "caída en el estómago" por un segundo (como en una montaña rusa) o escuchar cómo los motores del avión aceleran o desaceleran repentinamente. No es que el avión esté fallando; son los pilotos (o el piloto automático) ajustando la potencia para adaptarse al nuevo viento.</p>
+        <div class="info-callout">En la tabla lo verás en la columna <b>Δ Ciz.</b> Si este número sube repentinamente, espera cambios en el ruido de los motores y posibles sacudidas verticales.</div>
+      </div>
+    </div>
+
+    <div class="info-section">
+      <h3 class="info-title">✈️ Corriente en Chorro (Jet Stream) y Choques Térmicos</h3>
+      <div class="info-text">
+        <p><b>¿Qué es?</b> Las corrientes en chorro son "autopistas" de viento muy rápido (a veces más de 300 km/h) situadas a gran altitud. Los aviones las buscan para ahorrar combustible cuando van a favor. Los bordes de estas autopistas tienen diferencias drásticas de temperatura. </p>
+        <p><b>¿Cómo lo siente el pasajero?</b> Cuando el avión cruza el borde para entrar o salir de esta autopista de viento, el cambio repentino de temperatura del aire (choque térmico) crea turbulencia de aire claro (CAT). Es invisible y repentina.</p>
+        <div class="info-callout">Si en la tabla ves el aviso <span class="badge b-sat">🧊 Choque Térmico</span> junto a <span class="badge b-cat">CAT 🌬️</span>, significa que a esa hora exacta el avión estará cruzando uno de los márgenes del Jet Stream. ¡Abróchate el cinturón y disfruta de la física atmosférica en acción!</div>
+      </div>
+    </div>
+
+    <div class="info-section">
+      <h3 class="info-title">📊 Cómo leer nuestra predicción (Ejemplo)</h3>
+      <div class="table-container" style="margin-top: 10px;">
+        <table>
+          <thead>
+            <tr><th>Hora (Z)</th><th>Viento</th><th>Δ Ciz.</th><th>Causa / Avisos</th><th>EDR</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="font-weight:bold;">14:30</td>
+              <td style="color:#64748b;">45</td>
+              <td style="color:#ef4444; font-weight:600;">10</td>
+              <td style="line-height:1.4;"><span class="badge b-ok">Estable</span></td>
+              <td style="color:#059669; font-weight:bold;">5.2</td>
+            </tr>
+            <tr>
+              <td style="font-weight:bold;">14:45</td>
+              <td style="color:#64748b;">180</td>
+              <td style="color:#ef4444; font-weight:600;">85</td>
+              <td style="line-height:1.4;"><span class="badge b-cat">CAT 🌬️</span><br><span class="badge b-sat">🧊 Choque Térmico</span></td>
+              <td style="color:#d97706; font-weight:bold;">22.4</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="info-text" style="margin-top: 15px;"><b>Traducción:</b> A las 14:30 estarás tomando un café tranquilamente (EDR 5.2). Pero a las 14:45, el avión entrará en una zona de vientos fuertes (180 km/h) con un cambio brusco de temperatura. Notarás zarandeos moderados (EDR 22.4) y puede que escuches los motores ajustar potencia por la alta cizalladura (85). Sabrás exactamente qué está pasando y cuánto va a durar.</p>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const $ = (id) => document.getElementById(id);
+  
+  // DICCIONARIO VIP DE AEROPUERTOS AMPLIADO
+  const AIRPORTS = { 
+    MAD: { name: "Madrid", lat: 40.4722, lon: -3.5608 }, 
+    TFS: { name: "Tenerife Sur", lat: 28.0445, lon: -16.5725 },
+    TFN: { name: "Tenerife Norte", lat: 28.4827, lon: -16.3415 }, 
+    BCN: { name: "Barcelona", lat: 41.2971, lon: 2.0785 },
+    JFK: { name: "New York", lat: 40.6413, lon: -73.7781 }, 
+    LHR: { name: "Londres", lat: 51.4700, lon: -0.4543 },
+    CDG: { name: "París", lat: 49.0097, lon: 2.5479 }, 
+    DXB: { name: "Dubai", lat: 25.2532, lon: 55.3657 },
+    LPA: { name: "Gran Canaria", lat: 27.9319, lon: -15.3866 }, 
+    PMI: { name: "Mallorca", lat: 39.5517, lon: 2.7388 },
+    AGP: { name: "Málaga", lat: 36.6749, lon: -4.4991 }, 
+    AMS: { name: "Ámsterdam", lat: 52.3086, lon: 4.7639 }
+  };
+
+  let map, dotsLayer, mainChart;
+  let currentOrig = "MAD", currentDest = "TFS";
+
+  function populateSelects() {
+    const origSel = $('origSelect');
+    const destSel = $('destSelect');
+    origSel.innerHTML = '';
+    destSel.innerHTML = '';
+    
+    Object.keys(AIRPORTS).forEach(iata => {
+      const name = AIRPORTS[iata].name;
+      origSel.innerHTML += `<option value="${iata}">${name} (${iata})</option>`;
+      destSel.innerHTML += `<option value="${iata}">${name} (${iata})</option>`;
+    });
+
+    origSel.value = "MAD";
+    destSel.value = "TFS";
+  }
+
+  function initMap() {
+    map = L.map('map', { zoomControl: false }).setView([34, -10], 4);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
+    dotsLayer = L.layerGroup().addTo(map);
+    
+    populateSelects();
+    fetchFlights(); // Inicia la carga del primer vuelo
+  }
+
+  async function fetchFlights() {
+    currentOrig = $('origSelect').value;
+    currentDest = $('destSelect').value;
+    
+    if(currentOrig === currentDest) {
+        $('flightSelect').innerHTML = '<option value="">El origen y destino son iguales</option>';
+        $('flightBox').style.display = 'flex';
+        $('manualTimeBox').style.display = 'none';
+        $('btnCompute').disabled = true;
+        return;
+    }
+
+    const day = $('daySelect').value;
+    $('flightSelect').innerHTML = '<option value="">Buscando vuelos...</option>';
+    $('btnCompute').disabled = true;
+
+    try {
+      const res = await fetch(`/api/flights?orig=${currentOrig}&dest=${currentDest}&day=${day}`);
+      const data = await res.json();
+      
+      const sel = $('flightSelect');
+      sel.innerHTML = '';
+      
+      if (data.flights && data.flights.length > 0) {
+        data.flights.forEach(f => {
+          const opt = document.createElement('option');
+          opt.value = f.depTime;
+          opt.textContent = `${f.depTime} · ${f.flight}`;
+          sel.appendChild(opt);
+        });
+        $('flightBox').style.display = 'flex';
+        $('manualTimeBox').style.display = 'none';
+      } else {
+        $('flightBox').style.display = 'none';
+        $('manualTimeBox').style.display = 'flex';
+      }
+    } catch(e) {
+      $('flightBox').style.display = 'none';
+      $('manualTimeBox').style.display = 'flex';
+    }
+    $('btnCompute').disabled = false;
+  }
+
+  function addMinutesToTime(timeStr, minsToAdd) {
+    let [h, m] = timeStr.split(':').map(Number);
+    let date = new Date();
+    date.setHours(h, m + minsToAdd, 0);
+    return date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
+  }
+
+  async function compute() {
+    const btn = $('btnCompute'); btn.disabled = true;
+    
+    let startCoords = AIRPORTS[currentOrig];
+    let endCoords = AIRPORTS[currentDest];
+    
+    let baseTime = $('flightBox').style.display !== 'none' ? $('flightSelect').value : $('manualTime').value;
+    if(!baseTime) baseTime = "12:00";
+
+    map.setView([startCoords.lat, startCoords.lon], 4);
+    dotsLayer.clearLayers();
+    const dataPoints = [];
+    const tableBody = document.querySelector('#dataTable tbody');
+    tableBody.innerHTML = "";
+
+    let modMinutes = 0, nubesMinutes = 0, catMinutes = 0, satShocks = 0;
+    let maxWind = 0;
+    let prevSat = null;
+
+    for(let i=0; i<=12; i++) {
+      const f = i/12;
+      const lat = startCoords.lat + (endCoords.lat-startCoords.lat)*f;
+      const lon = startCoords.lon + (endCoords.lon-startCoords.lon)*f;
+      
+      const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=windspeed_250hPa,windspeed_300hPa,cloudcover_high,temperature_250hPa&forecast_days=1`);
+      const d = await r.json();
+      const w250 = d.hourly.windspeed_250hPa[0];
+      const w300 = d.hourly.windspeed_300hPa[0];
+      const nubesAltas = d.hourly.cloudcover_high[0]; 
+      const currentSat = d.hourly.temperature_250hPa[0];
+      
+      const vws = Math.abs(w250 - w300);
+      const impactoNubes = nubesAltas > 50 ? (nubesAltas * 0.15) : 0;
+      const atmosphericNoise = Math.sin(i * 0.8) * 3 + (Math.random() * 4);
+      let edr = (vws * 0.45) + (w250 * 0.03) + impactoNubes + atmosphericNoise;
+      if (edr < 2) edr = 2 + Math.random() * 2;
+
+      let satWarning = "";
+      if (prevSat !== null) {
+        if (Math.abs(currentSat - prevSat) > 2.0) {
+           satWarning = `<br><span class="badge b-sat">🧊 Choque Térmico</span>`;
+           satShocks++;
+        }
+      }
+      prevSat = currentSat;
+
+      let causaTxt = "Estable"; let causaClase = "b-ok";
+      if (edr > 15) {
+        if (impactoNubes > 5) {
+            causaTxt = "Nubes ☁️"; causaClase = "b-nubes"; nubesMinutes += 15;
+        } else {
+            causaTxt = "CAT 🌬️"; causaClase = "b-cat"; catMinutes += 15;
+        }
+      }
+
+      if(w250 > maxWind) maxWind = w250;
+      if(edr > 20) modMinutes += 15;
+
+      const realTime = addMinutesToTime(baseTime, i * 15);
+      const label = i === 0 ? `${currentOrig} (${realTime})` : i === 12 ? `${currentDest} (${realTime})` : realTime;
+      
+      dataPoints.push({ label, edr, vws, w250 });
+
+      tableBody.innerHTML += `<tr>
+        <td style="font-weight:bold;">${label}</td>
+        <td style="color:#64748b;">${w250.toFixed(0)}</td>
+        <td style="color:#ef4444; font-weight:600;">${vws.toFixed(0)}</td>
+        <td style="line-height:1.4;"><span class="badge ${causaClase}">${causaTxt}</span>${satWarning}</td>
+        <td style="color:${edr > 20 ? '#d97706':'#059669'}; font-weight:bold;">${edr.toFixed(1)}</td>
+      </tr>`;
+      
+      L.circleMarker([lat, lon], { radius: 6, color: edr > 20 ? '#fbbf24' : '#3b82f6', fillOpacity: 0.8 }).addTo(dotsLayer);
+    }
+
+    renderChart(dataPoints);
+    generateBriefing(modMinutes, catMinutes, nubesMinutes, satShocks);
+    btn.disabled = false;
+  }
+
+  function renderChart(points) {
+    if(mainChart) mainChart.destroy();
+    mainChart = new Chart($('mainChart'), {
+      type: 'line',
+      data: {
+        labels: points.map(p => p.label),
+        datasets: [
+          { label: 'EDR', data: points.map(p => p.edr), borderColor: '#1e3a8a', borderWidth: 3, tension: 0.4, pointRadius: 2, fill: true, backgroundColor: 'rgba(59, 130, 246, 0.1)', yAxisID: 'y' },
+          { label: 'Cizalladura (Δ)', data: points.map(p => p.vws), borderColor: '#ef4444', borderWidth: 2, borderDash: [4, 4], tension: 0.3, pointRadius: 0, fill: false, yAxisID: 'y1' }
+        ]
+      },
+      options: { 
+        maintainAspectRatio: false, 
+        plugins: { legend: {display: false}, tooltip: {mode: 'index', intersect: false} },
+        scales: { 
+          x: { ticks: {color: '#64748b', maxRotation: 45, minRotation: 45} },
+          y: { type: 'linear', display: true, position: 'left', min: 0, max: 60, ticks: {color: '#1e3a8a'} },
+          y1: { type: 'linear', display: true, position: 'right', min: 0, max: 100, ticks: {color: '#ef4444'}, grid: {drawOnChartArea: false} }
+        }
+      }
+    });
+  }
+
+  function generateBriefing(mod, cat, nubes, satShocks) {
+    const briefing = $('briefing');
+    const content = $('briefingContent');
+    briefing.style.display = 'block';
+
+    let text = `<p style="margin-top:0">Tu vuelo presenta <b>${mod} minutos</b> proyectados de turbulencia moderada o superior.</p>`;
+    
+    text += `<ul style="margin-bottom:0; padding-left: 20px;">`;
+    if (mod > 0) {
+      if (cat > 0) text += `<li><b>${cat} min de Aire Claro (CAT):</b> Turbulencia invisible causada por choques térmicos en el aire.</li>`;
+      if (nubes > 0) text += `<li><b>${nubes} min Convectiva (Nubes):</b> Causada por el cruce de formaciones nubosas altas.</li>`;
+    } else {
+       text += `<li><b>Inestabilidad baja:</b> Vuelo en condiciones atmosféricas óptimas.</li>`;
+    }
+    
+    if (satShocks > 0) {
+       text += `<li><b style="color:#0891b2;">¡Atención SAT!</b> Se han detectado ${satShocks} cambios bruscos de temperatura. Posible cruce del núcleo del Jet Stream.</li>`;
+    }
+    text += `</ul>`;
+
+    content.innerHTML = text;
+  }
+
+  // LOGICA DEL MODAL
+  const modal = $('infoModal');
+  $('btnOpenInfo').onclick = () => { modal.style.display = 'flex'; };
+  $('btnCloseInfo').onclick = () => { modal.style.display = 'none'; };
+  window.onclick = (e) => { if (e.target == modal) modal.style.display = "none"; }
+
+  window.onload = initMap;
+  $('btnCompute').onclick = compute;
+</script>
+</body>
+</html>

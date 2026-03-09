@@ -6,8 +6,13 @@
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
-  "description": "Despacho Avanzado: EDR, VWS, SAT & Nubes",
+  "description": "Despacho Avanzado: EDR, VWS, SAT & Nubes. Predicción de turbulencia, cizalladura y meteorología para vuelos.",
   "orientation": "portrait",
+  "categories": [
+    "travel",
+    "utilities",
+    "weather"
+  ],
   "screenshots": [],
   "icons": [
     {
@@ -25,7 +30,8 @@
     {
       "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }
