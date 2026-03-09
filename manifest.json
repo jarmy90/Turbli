@@ -1,0 +1,23 @@
+{
+  "name": "AeroTrack Pro",
+  "short_name": "AeroTrack",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "description": "Despacho Avanzado: EDR, VWS, SAT & Nubes",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/jbrooksuk/JSON-Airports/master/logo_placeholder_192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/jbrooksuk/JSON-Airports/master/logo_placeholder_512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
