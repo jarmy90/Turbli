@@ -365,8 +365,10 @@
       font-size: 0.9rem;
     }
 
-    /* Language toggle */
-    #langBtn {
+
+    /* Language & Ko-fi buttons */
+    #langBtn,
+    .kofi-btn {
       width: auto;
       padding: 6px 14px;
       margin: 0;
@@ -375,33 +377,70 @@
       border: 1px solid var(--border);
       border-radius: 20px;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: background 0.2s, transform 0.1s;
       display: flex;
       align-items: center;
       gap: 6px;
       color: var(--text);
+      text-decoration: none;
     }
 
-    #langBtn:hover {
+    #langBtn:hover,
+    .kofi-btn:hover {
       background: rgba(255, 255, 255, 0.2);
-      opacity: 1;
+    }
+
+    .kofi-btn {
+      font-size: 0.9rem;
+      font-weight: bold;
+      background: #ff5e5b;
+      /* Ko-fi brand color */
+      color: white;
+      border: none;
+      white-space: nowrap;
+    }
+
+    .kofi-btn:hover {
+      background: #ff4744;
+      transform: scale(1.05);
+    }
+
+    @media (max-width: 480px) {
+      .kofi-btn {
+        font-size: 0.75rem;
+        padding: 5px 10px;
+        gap: 4px;
+      }
+      #langBtn {
+        font-size: 0.9rem;
+        padding: 5px 10px;
+      }
     }
   </style>
 </head>
 
 <body>
 
+
+
+
   <header>
     <div>
       <div style="font-weight: 900; font-size: 1.2rem;">AeroTrack <span style="color:var(--accent)">PRO</span></div>
       <div id="headerSub" style="color: var(--muted); font-size: 0.8rem;"></div>
     </div>
-    <button id="langBtn" onclick="toggleLang()" title="Switch language"></button>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <a href="https://buy.stripe.com/cNi14o4L52bQ7s02nsfYY00" target="_blank" rel="noopener noreferrer" id="kofiBtn"
+        class="kofi-btn" data-i18n="kofiBtn">☕ Invítame a un café</a>
+      <button id="langBtn" onclick="toggleLang()" title="Switch language"></button>
+    </div>
   </header>
 
+
+
+
   <div class="main-container">
-    <div class="grid-top">
-      <div class="panel">
+    <div class="panel">
         <div class="row-2">
           <div class="control-group">
             <span class="control-label" data-i18n="origin"></span>
@@ -437,26 +476,20 @@
 
         <button type="button" id="btnCompute" data-i18n="analyzeBtn"></button>
       </div>
-      <div id="map"></div>
-    </div>
 
     <div class="turbli-card">
       <h3 id="dualTitle" style="margin-top:0; margin-bottom: 5px;"></h3>
 
       <div class="chart-legend">
         <div class="legend-item"><span style="width:16px; height:4px; background:#1e3a8a; display:inline-block;"></span>
-          <span data-i18n="legendEDR"></span></div>
+          <span data-i18n="legendEDR"></span>
+        </div>
         <div class="legend-item"><span
             style="width:16px; height:2px; border-top:3px dashed #ef4444; display:inline-block;"></span> <span
             data-i18n="legendShear"></span></div>
       </div>
 
       <div class="turbli-wrapper">
-        <div class="severity-bar">
-          <div class="sev-zone" style="background:#f87171" data-i18n="sevSev"></div>
-          <div class="sev-zone" style="background:#fbbf24" data-i18n="sevMod"></div>
-          <div class="sev-zone" style="background:#fde68a" data-i18n="sevLgt"></div>
-        </div>
         <div style="flex-grow:1; position:relative;">
           <canvas id="mainChart"></canvas>
         </div>
@@ -562,6 +595,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
+
     // ─────────────────────────────────────────────────────
     // i18n TRANSLATIONS
     // ─────────────────────────────────────────────────────
@@ -570,6 +604,7 @@
         // Header
         headerSub: "Despacho Avanzado: EDR, VWS, SAT & Nubes",
         langBtnLabel: "🇬🇧 EN",
+        kofiBtn: "☕ Invítame a un café",
         // Controls
         origin: "Origen",
         destination: "Destino",
@@ -613,7 +648,7 @@
         modal2Title: "🌬️ Turbulencia y el Índice EDR",
         modal2Text: `<p><b>¿Qué es?</b> Es simplemente aire en movimiento irregular. Imagina un río que fluye tranquilo y de repente pasa sobre unas rocas bajo el agua, creando espuma y pequeños remolinos en la superficie. El avión es como un barco navegando por ese río.</p><p><b>¿Cómo lo siente el pasajero?</b> Como ir por un camino de tierra en un todoterreno. El avión da pequeños botes. <br>En nuestra tabla, esto se mide con el valor <b>EDR</b> (<i>Eddy Dissipation Rate</i>). Un EDR por debajo de 15 es un vuelo muy tranquilo. Entre 15 y 20 notarás que la bebida tiembla.</p>`,
         modal3Title: "⚠️ Cizalladura (Wind Shear)",
-        modal3Text: `<p><b>¿Qué es?</b> Es un cambio brusco en la velocidad o la dirección del viento en una distancia muy corta. Imagina que vas corriendo con viento a favor, y de repente el viento cambia y te da de cara.</p><p><b>¿Cómo lo siente el pasajero?</b> Puedes sentir una ligera sensación de "caída en el estómago" por un segundo (como en una montaña rusa) o escuchar cómo los motores del avión aceleran o desaceleran repentinamente. No es que el avión esté fallando; son los pilotos (o el piloto automático) ajustando la potencia para adaptarse al nuevo viento.</p><div class="info-callout">En la tabla lo verás en la columna <b>Δ Ciz.</b> Si este número sube repentinamente, espera cambios en el ruido de los motores y posibles sacudidas verticales.</div>`,
+        modal3Text: `<p><b>¿Qué es?</b> Es un cambio brusco en la velocidad o la dirección del viento en una distancia muy corta. Imagina que vas corriendo con viento a favor, y de repente el viento cambia y te da de cara.</p><p><b>¿Cómo lo siente el pasajero?</b> Puedes sentir una ligera sensación de "caída en el estómago" por un segundo (como en una montaña rusa) o escuchar cómo los motores del avión aceleran o desaceleran repentantemente. No es que el avión esté fallando; son los pilotos (o el piloto automático) ajustando la potencia para adaptarse al nuevo viento.</p><div class="info-callout">En la tabla lo verás en la columna <b>Δ Ciz.</b> Si este número sube repentinamente, espera cambios en el ruido de los motores y posibles sacudidas verticales.</div>`,
         modal4Title: "✈️ Corriente en Chorro (Jet Stream) y Choques Térmicos",
         modal4Text: `<p><b>¿Qué es?</b> Las corrientes en chorro son "autopistas" de viento muy rápido (a veces más de 300 km/h) situadas a gran altitud. Los aviones las buscan para ahorrar combustible cuando van a favor. Los bordes de estas autopistas tienen diferencias drásticas de temperatura.</p><p><b>¿Cómo lo siente el pasajero?</b> Cuando el avión cruza el borde para entrar o salir de esta autopista de viento, el cambio repentino de temperatura del aire (choque térmico) crea turbulencia de aire claro (CAT). Es invisible y repentina.</p><div class="info-callout">Si en la tabla ves el aviso <span class="badge b-sat">🧊 Choque Térmico</span> junto a <span class="badge b-cat">CAT 🌬️</span>, significa que a esa hora exacta el avión estará cruzando uno de los márgenes del Jet Stream. ¡Abróchate el cinturón y disfruta de la física atmosférica en acción!</div>`,
         modal5Title: "📊 Cómo leer nuestra predicción (Ejemplo)",
@@ -624,9 +659,67 @@
         // Header
         headerSub: "Advanced Dispatch: EDR, VWS, SAT & Clouds",
         langBtnLabel: "🇪🇸 ES",
+        kofiBtn: "☕ Buy me a coffee",
         // Controls
         origin: "Origin",
         destination: "Destination",
+        departureDay: "Departure day",
+        today: "Today",
+        tomorrow: "Tomorrow",
+        flightLabel: "Flight (Zulu)",
+        loading: "Loading...",
+        manualTime: "Manual Time (UTC)",
+        analyzeBtn: "ANALYZE FLIGHT PLAN",
+        // Results panel
+        dualTitle: "Dual Atmospheric Analysis",
+        legendEDR: "Turbulence (EDR)",
+        legendShear: "Wind Shear (Δ)",
+        sevSev: "Sev",
+        sevMod: "Mod",
+        sevLgt: "Lgt",
+        thTime: "Time\n(Z)",
+        thWind: "Wind\nkm/h",
+        thShear: "Δ Shear\nkm/h",
+        thCause: "Cause / Warnings",
+        tableEmpty: 'Select a route and press "Analyze Flight Plan"',
+        briefingTitle: "Predictive Briefing",
+        infoBtn: "📖 INFO: TURBULENCE & WEATHER",
+        // Badges
+        stable: "Stable",
+        clouds: "Clouds ☁️",
+        thermalShock: "🧊 Choque Térmico",
+        // Briefing
+        briefingMinutes: (mod) => `Tu vuelo presenta <b>${mod} minutos</b> proyectados de turbulencia moderada o superior.`,
+        briefingCAT: (cat) => `<li><b>${cat} min de Aire Claro (CAT):</b> Turbulencia invisible causada por choques térmicos en el aire.</li>`,
+        briefingClouds: (n) => `<li><b>${n} min Convectiva (Nubes):</b> Causada por el cruce de formaciones nubosas altas.</li>`,
+        briefingSmooth: `<li><b>Inestabilidad baja:</b> Vuelo en condiciones atmosféricas óptimas.</li>`,
+        briefingSAT: (s) => `<li><b style="color:#0891b2;">¡Atención SAT!</b> Se han detectado ${s} cambios bruscos de temperatura. Posible cruce del núcleo del Jet Stream.</li>`,
+        // Fetch messages
+        sameSrcDest: "El origen y destino son iguales",
+        searching: "Buscando vuelos...",
+        // Modal
+        modal1Title: "🧠 El Miedo a Volar: Un truco del cerebro",
+        modal1Text: `<p>El miedo a la turbulencia no proviene del peligro real (los aviones están diseñados para soportar fuerzas inmensamente superiores a las peores turbulencias de la historia), sino de la <b>incertidumbre</b>. Nuestro cerebro está programado para alertarnos ante lo inesperado.</p><p>Cuando vas en coche y ves un bache en la carretera, tu cerebro se prepara. En un avión, el aire es invisible. Al no ver el "bache", tu sistema nervioso reacciona con ansiedad. <b>El objetivo de AeroTrack Pro es hacer visible lo invisible.</b> Cuando sabes a qué hora exacta va a temblar el avión y <i>por qué</i> está temblando, la incertidumbre desaparece, tu cerebro se relaja y el miedo se disipa.</p>`,
+        modal2Title: "🌬️ Turbulencia y el Índice EDR",
+        modal2Text: `<p><b>¿Qué es?</b> Es simplemente aire en movimiento irregular. Imagina un río que fluye tranquilo y de repente pasa sobre unas rocas bajo el agua, creando espuma y pequeños remolinos en la superficie. El avión es como un barco navegando por ese río.</p><p><b>¿Cómo lo siente el pasajero?</b> Como ir por un camino de tierra en un todoterreno. El avión da pequeños botes. <br>En nuestra tabla, esto se mide con el valor <b>EDR</b> (<i>Eddy Dissipation Rate</i>). Un EDR por debajo de 15 es un vuelo muy tranquilo. Entre 15 y 20 notarás que la bebida tiembla.</p>`,
+        modal3Title: "⚠️ Cizalladura (Wind Shear)",
+        modal3Text: `<p><b>¿Qué es?</b> Es un cambio brusco en la velocidad o la dirección del viento en una distancia muy corta. Imagina que vas corriendo con viento a favor, y de repente el viento cambia y te da de cara.</p><p><b>¿Cómo lo siente el pasajero?</b> Puedes sentir una ligera sensación de "caída en el estómago" por un segundo (como en una montaña rusa) o escuchar cómo los motores del avión aceleran o desaceleran repentinamente. No es que el avión esté fallando; son los pilotos (o el piloto automático) ajustando la potencia para adaptarse al nuevo viento.</p><div class="info-callout">En la tabla lo verás en la columna <b>Δ Ciz.</b> Si este número sube repentinamente, espera cambios en el ruido de los motores y posibles sacudidas verticales.</div>`,
+        modal4Title: "✈️ Corriente en Chorro (Jet Stream) y Choques Térmicos",
+        modal4Text: `<p><b>¿Qué es?</b> Las corrientes en chorro son "autopistas" de viento muy rápido (a veces más de 300 km/h) situadas a gran altitud. Los aviones las buscan para ahorrar combustible cuando van a favor. Los bordes de estas autopistas tienen diferencias drásticas de temperatura.</p><p><b>¿Cómo lo siente el pasajero?</b> Cuando el avión cruza el borde para entrar o salir de esta autopista de viento, el cambio repentino de temperatura del aire (choque térmico) crea turbulencia de aire claro (CAT). Es invisible y repentina.</p><div class="info-callout">Si en la tabla ves el aviso <span class="badge b-sat">🧊 Choque Térmico</span> junto a <span class="badge b-cat">CAT 🌬️</span>, significa que a esa hora exacta el avión estará cruzando uno de los márgenes del Jet Stream. ¡Abróchate el cinturón y disfruta de la física atmosférica en acción!</div>`,
+        modal5Title: "📊 Cómo leer nuestra predicción (Ejemplo)",
+        modal5Text: `<b>Traducción:</b> A las 14:30 estarás tomando un café tranquilamente (EDR 5.2). Pero a las 14:45, el avión entrará en una zona de vientos fuertes (180 km/h) con un cambio brusco de temperatura. Notarás zarandeos moderados (EDR 22.4) y puede que escuches los motores ajustar potencia por la alta cizalladura (85). Sabrás exactamente qué está pasando y cuánto va a durar.`,
+      },
+
+
+      en: {
+        // Header
+        headerSub: "Advanced Dispatch: EDR, VWS, SAT & Clouds",
+        langBtnLabel: "🇪🇸 ES",
+        kofiBtn: "☕ Buy me a coffee",
+        // Controls
+        origin: "Origin",
+        destination: "Destination",
+
         departureDay: "Departure day",
         today: "Today",
         tomorrow: "Tomorrow",
@@ -696,11 +789,13 @@
         if (t[key] !== undefined && typeof t[key] === 'string') el.innerHTML = t[key];
       });
 
+
       // Special elements
       document.getElementById('headerSub').textContent = t.headerSub;
       document.getElementById('langBtn').textContent = t.langBtnLabel;
       document.getElementById('dualTitle').textContent = t.dualTitle;
       document.getElementById('tableEmpty').textContent = t.tableEmpty;
+
 
       // Repopulate select options
       const daySelect = document.getElementById('daySelect');
@@ -783,7 +878,67 @@
       fetchFlights();
     }
 
-    async function fetchFlights() {
+
+    // ─────────────────────────────────────────────────────
+    // LOCAL SCHEDULE DB (NO BACKEND NEEDED)
+    // ─────────────────────────────────────────────────────
+    const SCHEDULE_DB = {
+      "MAD-TFS": [{ depTime: "07:00", flight: "IB3803" }, { depTime: "08:45", flight: "VY6257" }, { depTime: "10:20", flight: "IB3805" }, { depTime: "13:15", flight: "UX3053" }, { depTime: "15:30", flight: "VY6259" }, { depTime: "17:50", flight: "IB3807" }, { depTime: "20:10", flight: "VY6261" }, { depTime: "22:30", flight: "IB3809" }],
+      "TFS-MAD": [{ depTime: "06:30", flight: "IB3802" }, { depTime: "09:10", flight: "VY6258" }, { depTime: "11:45", flight: "IB3804" }, { depTime: "14:00", flight: "UX3054" }, { depTime: "16:20", flight: "VY6260" }, { depTime: "18:50", flight: "IB3806" }, { depTime: "21:15", flight: "VY6262" }],
+      "MAD-TFN": [{ depTime: "07:30", flight: "IB3821" }, { depTime: "11:00", flight: "VY6241" }, { depTime: "15:00", flight: "IB3823" }, { depTime: "19:30", flight: "UX3011" }],
+      "TFN-MAD": [{ depTime: "08:10", flight: "IB3820" }, { depTime: "12:20", flight: "VY6242" }, { depTime: "16:30", flight: "IB3822" }, { depTime: "21:00", flight: "UX3012" }],
+      "MAD-BCN": [{ depTime: "06:00", flight: "IB3010" }, { depTime: "07:00", flight: "VY1012" }, { depTime: "08:00", flight: "IB3012" }, { depTime: "09:00", flight: "UX1011" }, { depTime: "10:00", flight: "VY1014" }, { depTime: "11:00", flight: "IB3014" }, { depTime: "13:00", flight: "IB3016" }, { depTime: "15:00", flight: "VY1018" }, { depTime: "17:00", flight: "VY1020" }, { depTime: "19:00", flight: "IB3020" }, { depTime: "21:00", flight: "VY1022" }],
+      "BCN-MAD": [{ depTime: "06:30", flight: "IB3011" }, { depTime: "07:30", flight: "VY1013" }, { depTime: "09:30", flight: "UX1012" }, { depTime: "12:30", flight: "IB3017" }, { depTime: "15:30", flight: "VY1019" }, { depTime: "18:30", flight: "IB3021" }, { depTime: "21:30", flight: "VY1023" }],
+      "MAD-LPA": [{ depTime: "07:15", flight: "IB3841" }, { depTime: "10:30", flight: "VY6301" }, { depTime: "14:45", flight: "IB3843" }, { depTime: "18:00", flight: "UX7061" }, { depTime: "21:30", flight: "VY6303" }],
+      "LPA-MAD": [{ depTime: "06:45", flight: "IB3840" }, { depTime: "10:00", flight: "VY6302" }, { depTime: "14:15", flight: "IB3842" }, { depTime: "17:30", flight: "UX7062" }, { depTime: "21:00", flight: "VY6304" }],
+      "MAD-PMI": [{ depTime: "07:00", flight: "IB3701" }, { depTime: "09:30", flight: "VY6101" }, { depTime: "13:00", flight: "IB3703" }, { depTime: "17:00", flight: "UX5401" }, { depTime: "20:30", flight: "VY6103" }],
+      "PMI-MAD": [{ depTime: "08:00", flight: "IB3700" }, { depTime: "11:00", flight: "VY6102" }, { depTime: "14:30", flight: "IB3702" }, { depTime: "18:30", flight: "UX5402" }, { depTime: "22:00", flight: "VY6104" }],
+      "MAD-LHR": [{ depTime: "07:10", flight: "IB3163" }, { depTime: "10:00", flight: "BA460" }, { depTime: "12:30", flight: "IB3165" }, { depTime: "15:40", flight: "BA462" }, { depTime: "18:10", flight: "IB3167" }, { depTime: "21:00", flight: "BA464" }],
+      "LHR-MAD": [{ depTime: "08:00", flight: "BA461" }, { depTime: "11:30", flight: "IB3162" }, { depTime: "14:00", flight: "BA463" }, { depTime: "17:00", flight: "IB3164" }, { depTime: "20:00", flight: "BA465" }]
+    };
+
+    function generateFallbackSchedule(orig, dest) {
+      const carriers = ["IB", "VY", "UX", "VK"];
+      let route_hash = 0;
+      for (let i = 0; i < (orig + dest).length; i++) route_hash += (orig + dest).charCodeAt(i);
+
+      const num_flights = 4 + (route_hash % 5);
+      const base_hour = 6 + (route_hash % 2);
+      const spacing = Math.max(2, Math.floor((22 - base_hour) / num_flights));
+
+      const flights = [];
+      for (let i = 0; i < num_flights; i++) {
+        let h = Math.min(base_hour + i * spacing, 22);
+        let m = Math.floor(((route_hash * (i + 1)) % 60) / 5) * 5;
+        let carrier = carriers[(route_hash + i) % carriers.length];
+        let num = 1000 + ((route_hash + i * 37) % 8000);
+
+        let hh = h.toString().padStart(2, '0');
+        let mm = m.toString().padStart(2, '0');
+        flights.push({ depTime: `${hh}:${mm}`, flight: `${carrier}${num}` });
+      }
+      return flights.sort((a, b) => a.depTime.localeCompare(b.depTime));
+    }
+
+    function getLocalFlights(orig, dest, day) {
+      const key = `${orig}-${dest}`;
+      let flights = SCHEDULE_DB[key] || generateFallbackSchedule(orig, dest);
+
+      if (day === 'today') {
+        const now = new Date();
+        const currentMin = now.getUTCHours() * 60 + now.getUTCMinutes();
+
+        const upcoming = flights.filter(f => {
+          const [h, m] = f.depTime.split(':').map(Number);
+          return (h * 60 + m) >= currentMin;
+        });
+
+        flights = upcoming.length > 0 ? upcoming : flights.slice(-2);
+      }
+      return flights;
+    }
+
+    function fetchFlights() {
       const t = TRANSLATIONS[currentLang];
       currentOrig = $('origSelect').value;
       currentDest = $('destSelect').value;
@@ -797,35 +952,28 @@
       }
 
       const day = $('daySelect').value;
-      $('flightSelect').innerHTML = `<option value="">${t.searching}</option>`;
-      $('btnCompute').disabled = true;
+      const sel = $('flightSelect');
+      sel.innerHTML = '';
 
-      try {
-        const res = await fetch(`/api/flights?orig=${currentOrig}&dest=${currentDest}&day=${day}`);
-        const data = await res.json();
+      const flights = getLocalFlights(currentOrig, currentDest, day);
 
-        const sel = $('flightSelect');
-        sel.innerHTML = '';
-
-        if (data.flights && data.flights.length > 0) {
-          data.flights.forEach(f => {
-            const opt = document.createElement('option');
-            opt.value = f.depTime;
-            opt.textContent = `${f.depTime} · ${f.flight}`;
-            sel.appendChild(opt);
-          });
-          $('flightBox').style.display = 'flex';
-          $('manualTimeBox').style.display = 'none';
-        } else {
-          $('flightBox').style.display = 'none';
-          $('manualTimeBox').style.display = 'flex';
-        }
-      } catch (e) {
+      if (flights && flights.length > 0) {
+        flights.forEach(f => {
+          const opt = document.createElement('option');
+          opt.value = f.depTime;
+          opt.textContent = `${f.depTime} · ${f.flight}`;
+          sel.appendChild(opt);
+        });
+        $('flightBox').style.display = 'flex';
+        $('manualTimeBox').style.display = 'none';
+      } else {
         $('flightBox').style.display = 'none';
         $('manualTimeBox').style.display = 'flex';
       }
+
       $('btnCompute').disabled = false;
     }
+
 
     function addMinutesToTime(timeStr, minsToAdd) {
       let [h, m] = timeStr.split(':').map(Number);
